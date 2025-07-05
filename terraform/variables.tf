@@ -22,6 +22,7 @@ variable "db_password" {
 }
 
 variable "static_bucket" {
+  type        = string
   description = "S3 bucket name for static files"
   default     = "todo-static-assets-demo"
 }
@@ -30,10 +31,6 @@ variable "key_name" {
   type        = string
 }
 
-variable "static_bucket" {
-  type        = string
-  description = "S3 bucket name for static files"
-}
 
 variable "git_repo" {
   type        = string
