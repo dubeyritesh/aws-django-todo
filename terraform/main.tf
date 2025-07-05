@@ -111,5 +111,21 @@ module "asg" {
   git_repo      = var.git_repo
 }
 
+module "monitoring" {
+  source    = "./modules/monitoring"
+  asg_name  = module.asg.asg_name
+  alb_name  = module.alb.alb_name
+}
+
+module "cloudtrail" {
+  source = "./modules/cloudtrail"
+}
+
+module "waf" {
+  source   = "./modules/waf"
+  alb_arn  = module.alb.alb_arn
+}
+
+
 
 

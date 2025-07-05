@@ -10,31 +10,6 @@ resource "aws_vpc" "main" {
   }
 }
 
-# Public Subnet
-resource "aws_subnet" "public" {
-  vpc_id                  = aws_vpc.main.id
-  cidr_block              = "10.0.1.0/24"
-  map_public_ip_on_launch = true
-  availability_zone       = data.aws_availability_zones.available.names[0]
-
-  tags = {
-    Name = "todo-public-subnet"
-  }
-}
-
-# Private Subnet
-resource "aws_subnet" "private" {
-  vpc_id                  = aws_vpc.main.id
-  cidr_block              = "10.0.2.0/24"
-  map_public_ip_on_launch = false
-  availability_zone       = data.aws_availability_zones.available.names[0]
-
-  tags = {
-    Name = "todo-private-subnet"
-  }
-}
-
-# Internet Gateway
 resource "aws_internet_gateway" "igw" {
   vpc_id = aws_vpc.main.id
 
@@ -43,12 +18,41 @@ resource "aws_internet_gateway" "igw" {
   }
 }
 
-# NAT Gateway + EIP
-resource "aws_eip" "nat" {}
+# Public Subnets (2)
+resource "aws_subnet" "public" {
+  count = 2
+  vpc_id                  = aws_vpc.main.id
+  cidr_block              = cidrsubnet("10.0.1.0/24", 1, count.index)
+  map_public_ip_on_launch = true
+  availability_zone       = data.aws_availability_zones.available.names[count.index]
+
+  tags = {
+    Name = "todo-public-${count.index + 1}"
+  }
+}
+
+# Private Subnets (2)
+resource "aws_subnet" "private" {
+  count = 2
+  vpc_id                  = aws_vpc.main.id
+  cidr_block              = cidrsubnet("10.0.2.0/24", 1, count.index)
+  map_public_ip_on_launch = false
+  availability_zone       = data.aws_availability_zones.available.names[count.index]
+
+  tags = {
+    Name = "todo-private-${count.index + 1}"
+  }
+}
+
+# Elastic IP and NAT Gateway
+resource "aws_eip" "nat" {
+  count = 1
+  domain = "vpc"
+}
 
 resource "aws_nat_gateway" "nat" {
-  allocation_id = aws_eip.nat.id
-  subnet_id     = aws_subnet.public.id
+  allocation_id = aws_eip.nat[0].id
+  subnet_id     = aws_subnet.public[0].id
 
   tags = {
     Name = "todo-nat-gateway"
@@ -57,7 +61,7 @@ resource "aws_nat_gateway" "nat" {
   depends_on = [aws_internet_gateway.igw]
 }
 
-# Route Table for Public Subnet
+# Route Tables
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.main.id
 
@@ -71,12 +75,12 @@ resource "aws_route_table" "public" {
   }
 }
 
-resource "aws_route_table_association" "public_assoc" {
-  subnet_id      = aws_subnet.public.id
+resource "aws_route_table_association" "public" {
+  count          = 2
+  subnet_id      = aws_subnet.public[count.index].id
   route_table_id = aws_route_table.public.id
 }
 
-# Route Table for Private Subnet (uses NAT)
 resource "aws_route_table" "private" {
   vpc_id = aws_vpc.main.id
 
@@ -90,7 +94,8 @@ resource "aws_route_table" "private" {
   }
 }
 
-resource "aws_route_table_association" "private_assoc" {
-  subnet_id      = aws_subnet.private.id
+resource "aws_route_table_association" "private" {
+  count          = 2
+  subnet_id      = aws_subnet.private[count.index].id
   route_table_id = aws_route_table.private.id
 }

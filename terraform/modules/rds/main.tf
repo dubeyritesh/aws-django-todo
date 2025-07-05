@@ -21,6 +21,9 @@ resource "aws_db_instance" "postgres" {
   skip_final_snapshot     = true
   deletion_protection     = false
   multi_az                = true
+  backup_retention_period = 7       # retain backups for 7 days
+  backup_window           = "03:00-06:00"  # preferred backup time window
+  auto_minor_version_upgrade = true
 
   tags = {
     Name = var.db_identifier
