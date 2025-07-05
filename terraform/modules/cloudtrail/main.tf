@@ -1,17 +1,22 @@
 resource "aws_s3_bucket" "cloudtrail_logs" {
   bucket = "todo-cloudtrail-logs-${random_id.suffix.hex}"
-  acl    = "private"
-
-  versioning {
-    enabled = true
-  }
-
   lifecycle {
     prevent_destroy = false
   }
-
   tags = {
     Name = "cloudtrail-logs"
+  }
+}
+
+resource "aws_s3_bucket_acl" "cloudtrail_logs_acl" {
+  bucket = aws_s3_bucket.cloudtrail_logs.id
+  acl    = "private"
+}
+
+resource "aws_s3_bucket_versioning" "this" {
+  bucket = aws_s3_bucket.cloudtrail_logs.id
+  versioning_configuration {
+    status = "Enabled"
   }
 }
 

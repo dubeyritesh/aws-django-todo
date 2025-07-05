@@ -21,6 +21,22 @@ terraform {
 #   }
 # }
 
+data "aws_ami" "ubuntu" {
+  most_recent = true
+  owners      = ["099720109477"] # Canonical (Ubuntu Official)
+
+  filter {
+    name   = "name"
+    values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+}
+
+
 # Load all modules/resources
 module "network" {
   source = "./modules/network"
@@ -31,17 +47,6 @@ module "security" {
   vpc_id         = module.network.vpc_id
   static_bucket  = var.static_bucket
 }
-
-
-
-# module "rds" {
-#   source       = "./modules/rds"
-#   db_name      = var.db_name
-#   db_username  = var.db_username
-#   db_password  = var.db_password
-#   subnet_ids   = module.network.public_subnet_ids
-#   vpc_id       = module.network.vpc_id
-# }
 
 module "s3" {
   source        = "./modules/s3"
@@ -74,7 +79,7 @@ module "rds" {
 
 module "ec2" {
   source           = "./modules/ec2"
-  public_subnet_id = module.network.public_subnet_id
+  private_subnet_ids   = module.network.private_subnet_ids
   ec2_sg_id        = module.security.ec2_sg_id
   key_name         = var.key_name
 

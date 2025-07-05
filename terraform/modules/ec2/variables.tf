@@ -1,7 +1,7 @@
-variable "public_subnet_id" {
-  type        = string
-  description = "Public subnet ID"
+variable "private_subnet_ids" {
+  type = list(string)
 }
+
 
 variable "ec2_sg_id" {
   type        = string

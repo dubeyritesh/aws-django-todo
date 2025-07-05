@@ -1,3 +1,19 @@
+data "aws_ami" "ubuntu" {
+  most_recent = true
+  owners      = ["099720109477"] # Canonical (Ubuntu Official)
+
+  filter {
+    name   = "name"
+    values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+}
+
+
 resource "aws_launch_template" "this" {
   name_prefix   = "todo-launch-"
   image_id      = var.ami_id
