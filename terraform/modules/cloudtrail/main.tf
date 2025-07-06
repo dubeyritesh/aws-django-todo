@@ -1,3 +1,4 @@
+data "aws_caller_identity" "current" {}
 resource "aws_s3_bucket" "cloudtrail_logs" {
   bucket = "todo-cloudtrail-logs-${random_id.suffix.hex}"
   lifecycle {
@@ -6,11 +7,6 @@ resource "aws_s3_bucket" "cloudtrail_logs" {
   tags = {
     Name = "cloudtrail-logs"
   }
-}
-
-resource "aws_s3_bucket_acl" "cloudtrail_logs_acl" {
-  bucket = aws_s3_bucket.cloudtrail_logs.id
-  acl    = "private"
 }
 
 resource "aws_s3_bucket_versioning" "this" {
@@ -53,4 +49,37 @@ resource "aws_cloudtrail" "main" {
 
 resource "random_id" "suffix" {
   byte_length = 4
+}
+
+resource "aws_s3_bucket_policy" "cloudtrail_logs_policy" {
+  bucket = aws_s3_bucket.cloudtrail_logs.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid = "AWSCloudTrailAclCheck20150319"
+        Effect = "Allow"
+        Principal = {
+          Service = "cloudtrail.amazonaws.com"
+        }
+        Action = "s3:GetBucketAcl"
+        Resource = aws_s3_bucket.cloudtrail_logs.arn
+      },
+      {
+        Sid = "AWSCloudTrailWrite20150319"
+        Effect = "Allow"
+        Principal = {
+          Service = "cloudtrail.amazonaws.com"
+        }
+        Action = "s3:PutObject"
+        Resource = "${aws_s3_bucket.cloudtrail_logs.arn}/AWSLogs/${data.aws_caller_identity.current.account_id}/*"
+        Condition = {
+          StringEquals = {
+            "s3:x-amz-acl" = "bucket-owner-full-control"
+          }
+        }
+      }
+    ]
+  })
 }
