@@ -1,29 +1,36 @@
 #!/bin/bash
+set -e
+
+# Update & install dependencies
 sudo apt update -y
 sudo apt install -y python3-pip python3-venv git
 
-# Clone Django app
+# Clone the Django app
 cd /home/ubuntu
 git clone ${GIT_REPO} app
 cd app/app/
 
-# Set environment variables
-echo "export DB_NAME=${DB_NAME}"       >> ~/.bashrc
-echo "export DB_USER=${DB_USER}"       >> ~/.bashrc
-echo "export DB_PASS=${DB_PASS}"       >> ~/.bashrc
-echo "export DB_HOST=${DB_HOST}"       >> ~/.bashrc
-echo "export STATIC_BUCKET=${STATIC_BUCKET}" >> ~/.bashrc
-source ~/.bashrc
-
-# Create virtualenv & install dependencies
+# Setup Python virtual environment
 python3 -m venv venv
 source venv/bin/activate
-pip install --upgrade pip
 pip install -r requirements.txt
 
-# Apply migrations & collect static
-python manage.py migrate
-python manage.py collectstatic --noinput
+# Export and persist environment variables
+cat <<EOF | sudo tee /etc/profile.d/django_env.sh
+export DB_NAME="${DB_NAME}"
+export DB_USER="${DB_USER}"
+export DB_PASS="${DB_PASS}"
+export DB_HOST="${DB_HOST}"
+export STATIC_BUCKET="${STATIC_BUCKET}"
+EOF
 
-# Run gunicorn
-nohup gunicorn todo_app.wsgi:application --bind 0.0.0.0:8000 &
+sudo chmod +x /etc/profile.d/django_env.sh
+source /etc/profile.d/django_env.sh
+
+# Apply Django migrations and collect static files
+python3 manage.py migrate
+python3 manage.py collectstatic --noinput
+
+# Run Gunicorn
+# nohup gunicorn todo_app.wsgi:application --bind 0.0.0.0:8000 &
+nohup gunicorn todo_app.wsgi:application --bind 0.0.0.0:8000 > /home/ubuntu/gunicorn.log 2>&1 &
