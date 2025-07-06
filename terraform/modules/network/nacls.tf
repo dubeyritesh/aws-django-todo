@@ -52,6 +52,30 @@ resource "aws_network_acl_rule" "public_in_ssh" {
   to_port        = 22
 }
 
+# Inbound: Allow ephemeral return ports
+resource "aws_network_acl_rule" "public_in_ephemeral" {
+  network_acl_id = aws_network_acl.public.id
+  rule_number    = 130
+  egress         = false
+  protocol       = "tcp"
+  rule_action    = "allow"
+  cidr_block     = "0.0.0.0/0"
+  from_port      = 1024
+  to_port        = 65535
+}
+resource "aws_network_acl_rule" "public_in_icmp" {
+  network_acl_id = aws_network_acl.public.id
+  rule_number    = 140
+  egress         = false
+  protocol       = "icmp"
+  rule_action    = "allow"
+  cidr_block     = "0.0.0.0/0"
+  from_port      = 8     # Echo request
+  to_port        = -1
+}
+
+
+
 # Outbound (allow all)
 resource "aws_network_acl_rule" "public_out_all" {
   network_acl_id = aws_network_acl.public.id
@@ -63,6 +87,17 @@ resource "aws_network_acl_rule" "public_out_all" {
   from_port      = 0
   to_port        = 0
 }
+resource "aws_network_acl_rule" "public_out_icmp" {
+  network_acl_id = aws_network_acl.public.id
+  rule_number    = 140
+  egress         = true
+  protocol       = "icmp"
+  rule_action    = "allow"
+  cidr_block     = "0.0.0.0/0"
+  from_port      = -1
+  to_port        = -1
+}
+
 
 # ============================
 # Private NACL

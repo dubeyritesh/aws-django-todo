@@ -19,11 +19,12 @@ resource "aws_launch_template" "this" {
   image_id      = var.ami_id
   instance_type = var.instance_type
   key_name      = var.key_name
-
-  vpc_security_group_ids = [var.ec2_sg_id]
-
   iam_instance_profile {
   name = var.instance_profile_name
+}
+  network_interfaces {
+  associate_public_ip_address = true
+  security_groups             = [var.ec2_sg_id]
 }
 
   user_data = base64encode(templatefile("${path.module}/user_data.sh.tpl", {
