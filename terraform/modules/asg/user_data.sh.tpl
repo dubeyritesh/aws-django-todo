@@ -2,6 +2,7 @@
 set -e
 
 # Update & install dependencies
+echo 'Acquire::ForceIPv4 "true";' | sudo tee /etc/apt/apt.conf.d/99force-ipv4
 sudo apt update -y
 sudo apt install -y python3-pip python3-venv git
 
